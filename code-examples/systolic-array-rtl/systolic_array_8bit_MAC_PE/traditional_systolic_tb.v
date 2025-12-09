@@ -132,30 +132,32 @@ module traditional_systolic_tb;
         begin
             // Total cycles needed = ROWS + COLS + processing time
             // For systolic array: each element enters at different times
-            // In proper systolic flow, element A[i][j] enters at row i at time j
-            // and element B[i][j] enters at column j at time i
+            // Proper systolic timing: A[row][col] enters row 'row' at cycle (row + col)
+            // and B[row][col] enters column 'col' at cycle (row + col)
             for (cycle = 0; cycle < ROWS + COLS + ROWS + 5; cycle = cycle + 1) begin
                 // Initialize buses to zero each cycle
                 left_in_bus = {(ROWS * WORD_SIZE){1'b0}};
                 top_in_bus = {(COLS * WORD_SIZE){1'b0}};
                 
-                // Feed Matrix A from left
-                // For each row, feed elements sequentially with proper timing
-                // A[row][col] is fed to row 'row' at cycle 'col'
+                // Feed Matrix A from left with proper systolic timing
+                // Each row receives data at staggered times
+                // A[row][col] is fed to row 'row' at cycle (row + col)
                 for (row = 0; row < ROWS; row = row + 1) begin
-                    if (cycle < COLS) begin
-                        // Feed element A[row][cycle] to row 'row'
-                        left_in_bus[(row+1)*WORD_SIZE-1 -: WORD_SIZE] = matrix_a[row][cycle];
+                    for (col = 0; col < COLS; col = col + 1) begin
+                        if (cycle == (row + col)) begin
+                            left_in_bus[(row+1)*WORD_SIZE-1 -: WORD_SIZE] = matrix_a[row][col];
+                        end
                     end
                 end
                 
-                // Feed Matrix B from top
-                // For each column, feed elements sequentially with proper timing
-                // B[row][col] is fed to column 'col' at cycle 'row'
+                // Feed Matrix B from top with proper systolic timing
+                // Each column receives data at staggered times
+                // B[row][col] is fed to column 'col' at cycle (row + col)
                 for (col = 0; col < COLS; col = col + 1) begin
-                    if (cycle < ROWS) begin
-                        // Feed element B[cycle][col] to column 'col'
-                        top_in_bus[(col+1)*WORD_SIZE-1 -: WORD_SIZE] = matrix_b[cycle][col];
+                    for (row = 0; row < ROWS; row = row + 1) begin
+                        if (cycle == (row + col)) begin
+                            top_in_bus[(col+1)*WORD_SIZE-1 -: WORD_SIZE] = matrix_b[row][col];
+                        end
                     end
                 end
                 
@@ -167,7 +169,6 @@ module traditional_systolic_tb;
     // Collect and display output
     task collect_output;
         integer out_row, out_col;
-        reg [WORD_SIZE-1:0] collected_results [0:ROWS-1][0:COLS-1];
         begin
             // Wait for results to propagate through the array
             repeat(10) @(posedge clk);
