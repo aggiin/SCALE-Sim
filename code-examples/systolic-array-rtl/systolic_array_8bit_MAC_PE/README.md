@@ -151,12 +151,60 @@ Configure mode using the control signals. The current testbench is set up for OS
 
 ## Troubleshooting
 
-If you encounter issues:
+### Common Issues
 
 1. **Compilation errors**: Ensure all three Verilog files are in the same directory
 2. **Simulation timeout**: Increase the timeout value in the testbench
-3. **Unexpected results**: Check control signal configuration and data feeding timing
-4. **Missing VCD file**: Ensure `$dumpfile` and `$dumpvars` statements are not commented out
+3. **Missing VCD file**: Ensure `$dumpfile` and `$dumpvars` statements are not commented out
+
+### Unexpected Results or Zeros in Output
+
+If you see unexpected values (like all zeros or only partial results), this is typically due to **timing issues** in the systolic array:
+
+**Root Causes:**
+- **Insufficient settling time**: Results need time to propagate through the systolic pipeline
+- **Control signal configuration**: Wrong mode settings affect how data flows and accumulates
+- **Data feeding timing**: Systolic arrays require precise wave-front scheduling
+
+**How to Debug:**
+
+1. **Check waveforms in detail**: 
+   ```bash
+   verdi -ssf traditional_systolic_tb.vcd &
+   # or
+   dve -vpd vcdplus.vpd &
+   ```
+   Monitor these signals:
+   - `left_in_bus`, `top_in_bus` - Verify data is fed at correct cycles
+   - `dut.u_mac_*.accumulator_reg` - Check internal accumulator values
+   - `bottom_out_bus`, `right_out_bus` - Track when outputs change
+   - `ctl_stat_bit_in`, `ctl_dummy_fsm_out_select_in` - Verify mode settings
+
+2. **Increase monitoring in testbench**:
+   - Uncomment the monitor section in the testbench (around line 295)
+   - This prints cycle-by-cycle output changes for debugging
+
+3. **Verify systolic timing**:
+   - In OS mode, data must flow through ROWS + COLS stages
+   - Results appear progressively, not all at once
+   - First result at PE[ROWS-1][COLS-1] after ~2*(ROWS+COLS) cycles
+   - Complete results need ~3*(ROWS+COLS) cycles
+
+4. **Check control signals**:
+   - OS mode: `ctl_stat_bit_in = 0`, `ctl_dummy_fsm_out_select_in = 1`
+   - WS mode: `ctl_stat_bit_in = 1`, `ctl_dummy_fsm_op2_select_in = 1`
+   - Verify accumulator is enabled and outputting correctly
+
+5. **Extend simulation time**:
+   - Modify `collect_output` task to wait longer
+   - Add more sampling points in the monitoring loop
+   - Increase `repeat(20)` to `repeat(50)` before $finish
+
+**Expected Behavior:**
+- For 4×4 matrix multiplication, expect results after ~24-30 clock cycles
+- Results emerge progressively from bottom-right PE first
+- Not all PEs output simultaneously in OS mode
+- The testbench samples outputs at multiple time points to capture results
 
 ## Further Reading
 

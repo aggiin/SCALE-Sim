@@ -169,21 +169,44 @@ module traditional_systolic_tb;
     // Collect and display output
     task collect_output;
         integer out_row, out_col;
+        integer sample_time;
         begin
-            // Wait for results to propagate through the array
-            repeat(10) @(posedge clk);
+            // For a 4x4 systolic array with proper wave-front scheduling:
+            // - Data feeding takes ROWS + COLS - 1 = 7 cycles
+            // - Results need additional ROWS + COLS cycles to fully propagate
+            // - Total delay needed: ~2*(ROWS + COLS) cycles
             
-            $display("\n=== Output from Systolic Array ===");
+            $display("\n=== Monitoring Outputs During Computation ===");
+            
+            // Sample outputs at different time points
+            for (sample_time = 0; sample_time < 3; sample_time = sample_time + 1) begin
+                repeat(ROWS + COLS) @(posedge clk);
+                
+                $display("\nSample at cycle %0d (time %0t):", sample_time, $time);
+                $display("Bottom output bus (by column):");
+                for (out_col = 0; out_col < COLS; out_col = out_col + 1) begin
+                    $display("  Column %0d: %4d", out_col, 
+                        $signed(bottom_out_bus[(out_col+1)*WORD_SIZE-1 -: WORD_SIZE]));
+                end
+                
+                $display("Right output bus (by row):");
+                for (out_row = 0; out_row < ROWS; out_row = out_row + 1) begin
+                    $display("  Row %0d: %4d", out_row, 
+                        $signed(right_out_bus[(out_row+1)*WORD_SIZE-1 -: WORD_SIZE]));
+                end
+            end
+            
+            $display("\n=== Final Output from Systolic Array ===");
             $display("Bottom output bus (by column):");
             for (out_col = 0; out_col < COLS; out_col = out_col + 1) begin
                 $display("  Column %0d: %4d", out_col, 
-                    bottom_out_bus[(out_col+1)*WORD_SIZE-1 -: WORD_SIZE]);
+                    $signed(bottom_out_bus[(out_col+1)*WORD_SIZE-1 -: WORD_SIZE]));
             end
             
             $display("\nRight output bus (by row):");
             for (out_row = 0; out_row < ROWS; out_row = out_row + 1) begin
                 $display("  Row %0d: %4d", out_row, 
-                    right_out_bus[(out_row+1)*WORD_SIZE-1 -: WORD_SIZE]);
+                    $signed(right_out_bus[(out_row+1)*WORD_SIZE-1 -: WORD_SIZE]));
             end
             $display("");
         end
@@ -232,14 +255,22 @@ module traditional_systolic_tb;
         // Collect and display outputs
         collect_output();
         
-        $display("\n=== Simulation Note ===");
-        $display("This testbench demonstrates systolic data flow.");
-        $display("The actual result collection depends on the control");
-        $display("signals configuration and dataflow mode (OS/WS/IS).");
-        $display("Results will appear at bottom_out_bus and right_out_bus");
-        $display("at different times based on the systolic pipeline depth.");
-        $display("\nFor complete verification, monitor internal PE signals");
-        $display("or use a waveform viewer (e.g., GTKWave).");
+        $display("\n=== Simulation Notes ===");
+        $display("Configuration: Output Stationary (OS) mode");
+        $display("  - ctl_stat_bit_in = 0");
+        $display("  - ctl_dummy_fsm_op2_select_in = 0");
+        $display("  - ctl_dummy_fsm_out_select_in = 1 (accumulator output)");
+        $display("");
+        $display("In OS mode with this configuration:");
+        $display("  - Each PE computes: accumulator += left_in * top_in");
+        $display("  - Results accumulate in each PE");
+        $display("  - Output appears at bottom_out_bus after all data propagates");
+        $display("");
+        $display("For complete verification:");
+        $display("  1. Check waveform viewer (VCS DVE, Verdi, or GTKWave)");
+        $display("  2. Monitor internal PE accumulator_reg signals");
+        $display("  3. Verify timing of data flow through the array");
+        $display("  4. Results depend on proper systolic timing alignment");
         $display("========================================\n");
         
         // Finish simulation
@@ -259,6 +290,23 @@ module traditional_systolic_tb;
     initial begin
         $dumpfile("traditional_systolic_tb.vcd");
         $dumpvars(0, traditional_systolic_tb);
+    end
+    
+    // Monitor for debugging - tracks when outputs change
+    integer monitor_cycle;
+    initial begin
+        monitor_cycle = 0;
+        forever begin
+            @(posedge clk);
+            monitor_cycle = monitor_cycle + 1;
+            // Uncomment below to see cycle-by-cycle output changes
+            // if (bottom_out_bus != 0 || right_out_bus != 0) begin
+            //     $display("Cycle %0d: bottom_out[0]=%0d, right_out[0]=%0d", 
+            //              monitor_cycle, 
+            //              $signed(bottom_out_bus[WORD_SIZE-1:0]),
+            //              $signed(right_out_bus[WORD_SIZE-1:0]));
+            // end
+        end
     end
 
 endmodule
