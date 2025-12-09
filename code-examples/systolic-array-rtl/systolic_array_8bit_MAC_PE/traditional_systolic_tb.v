@@ -171,8 +171,8 @@ module traditional_systolic_tb;
         integer out_row, out_col;
         integer sample_time;
         begin
-            // For a 4x4 systolic array with proper wave-front scheduling:
-            // - Data feeding takes ROWS + COLS - 1 = 7 cycles
+            // For systolic array with proper wave-front scheduling:
+            // - Data feeding takes ROWS + COLS - 1 cycles
             // - Results need additional ROWS + COLS cycles to fully propagate
             // - Total delay needed: ~2*(ROWS + COLS) cycles
             
