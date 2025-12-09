@@ -52,14 +52,15 @@ echo ""
 # Check if VCD file was generated
 if [ -f "traditional_systolic_tb.vcd" ]; then
     echo "Waveform file generated: traditional_systolic_tb.vcd"
-    echo "View with: dve -vpd vcdplus.vpd (for VCS) or verdi (for Verdi)"
+    echo "View with: verdi -ssf traditional_systolic_tb.vcd (for Verdi)"
     echo ""
 fi
 
 # Note about waveform files
-echo "Note: VCS may generate vpd/fsdb files for waveform viewing"
-echo "Use DVE (Discovery Visual Environment) or Verdi to view waveforms"
+echo "Note: The testbench generates VCD files by default"
+echo "For VPD format, add -debug_access+all+vpd to vcs compilation"
+echo "Use DVE (dve -vpd file.vpd) or Verdi (verdi -ssf file.vcd) to view waveforms"
 echo ""
 
 echo "Simulation files:"
-ls -lh simv traditional_systolic_tb.vcd vcdplus.vpd 2>/dev/null || echo "Simulation binary created"
+ls -lh simv traditional_systolic_tb.vcd 2>/dev/null || echo "Simulation binary created"

@@ -55,17 +55,19 @@ chmod +x run_simulation.sh
 ### Alternative: Manual Compilation and Execution with VCS
 
 ```bash
-# Compile with VCS
+# Compile with VCS (generates VCD by default)
 vcs -full64 -debug_access+all -sverilog traditional_mac.v traditional_systolic.v traditional_systolic_tb.v -o simv
 
 # Run simulation
 ./simv
 
-# View waveforms with DVE
-dve -vpd vcdplus.vpd &
-
-# Or use Verdi
+# View waveforms with Verdi (for VCD files)
 verdi -ssf traditional_systolic_tb.vcd &
+
+# Or compile with VPD format for DVE
+vcs -full64 -debug_access+all+vpd -sverilog traditional_mac.v traditional_systolic.v traditional_systolic_tb.v -o simv
+./simv
+dve -vpd vcdplus.vpd &
 ```
 
 ### Using Other Simulators
@@ -110,11 +112,12 @@ The testbench will display:
 For detailed analysis, view the waveform file with VCS tools:
 
 ```bash
-# Using DVE (VCS's waveform viewer)
-dve -vpd vcdplus.vpd &
-
-# Using Verdi (if available)
+# Using Verdi (recommended for VCD files)
 verdi -ssf traditional_systolic_tb.vcd &
+
+# Using DVE (if VPD format is generated)
+# Note: Add '-debug_access+all+vpd' to vcs compilation to generate VPD
+dve -vpd vcdplus.vpd &
 ```
 
 For other simulators, use their respective waveform viewers (e.g., GTKWave for open-source).
