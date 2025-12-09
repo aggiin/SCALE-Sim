@@ -34,18 +34,11 @@ The testbench (`traditional_systolic_tb.v`) performs a complete matrix multiplic
 
 ### Prerequisites
 
-Install Icarus Verilog (open-source Verilog simulator):
+This testbench is designed to run with Synopsys VCS. Ensure you have:
 
-```bash
-# Ubuntu/Debian
-sudo apt-get install iverilog gtkwave
-
-# MacOS
-brew install icarus-verilog gtkwave
-
-# Fedora/RHEL
-sudo dnf install iverilog gtkwave
-```
+- **Synopsys VCS** installed and properly licensed
+- VCS setup script sourced (e.g., `source /path/to/vcs/setup.sh`)
+- DVE (Discovery Visual Environment) or Verdi for waveform viewing (optional)
 
 ### Running the Simulation
 
@@ -59,17 +52,42 @@ chmod +x run_simulation.sh
 ./run_simulation.sh
 ```
 
-### Alternative: Manual Compilation and Execution
+### Alternative: Manual Compilation and Execution with VCS
 
 ```bash
-# Compile
-iverilog -o traditional_systolic_sim traditional_mac.v traditional_systolic.v traditional_systolic_tb.v
+# Compile with VCS
+vcs -full64 -debug_access+all -sverilog traditional_mac.v traditional_systolic.v traditional_systolic_tb.v -o simv
 
 # Run simulation
-vvp traditional_systolic_sim
+./simv
 
-# View waveforms
+# View waveforms with DVE
+dve -vpd vcdplus.vpd &
+
+# Or use Verdi
+verdi -ssf traditional_systolic_tb.vcd &
+```
+
+### Using Other Simulators
+
+If you prefer to use other simulators:
+
+**Icarus Verilog (open-source):**
+```bash
+iverilog -o sim traditional_mac.v traditional_systolic.v traditional_systolic_tb.v
+vvp sim
 gtkwave traditional_systolic_tb.vcd
+```
+
+**Cadence Xcelium:**
+```bash
+xrun traditional_mac.v traditional_systolic.v traditional_systolic_tb.v
+```
+
+**Mentor ModelSim/Questa:**
+```bash
+vlog traditional_mac.v traditional_systolic.v traditional_systolic_tb.v
+vsim -c work.traditional_systolic_tb -do "run -all; quit"
 ```
 
 ## Understanding the Output
@@ -89,11 +107,17 @@ The testbench will display:
 
 ### Waveform Analysis
 
-For detailed analysis, view the waveform file:
+For detailed analysis, view the waveform file with VCS tools:
 
 ```bash
-gtkwave traditional_systolic_tb.vcd
+# Using DVE (VCS's waveform viewer)
+dve -vpd vcdplus.vpd &
+
+# Using Verdi (if available)
+verdi -ssf traditional_systolic_tb.vcd &
 ```
+
+For other simulators, use their respective waveform viewers (e.g., GTKWave for open-source).
 
 Recommended signals to monitor:
 - `clk`, `rst` - Clock and reset
