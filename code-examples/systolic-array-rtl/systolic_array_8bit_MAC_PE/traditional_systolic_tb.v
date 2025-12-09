@@ -224,7 +224,7 @@ module traditional_systolic_tb;
         // stat_bit_in = 0 for OS mode
         ctl_stat_bit_in = 0;
         ctl_dummy_fsm_op2_select_in = 0;
-        ctl_dummy_fsm_out_select_in = 1; // 1: output accumulator, 0: output top_in
+        ctl_dummy_fsm_out_select_in = 1; // 1: output accumulator_reg, 0: output top_in_reg
         
         // Feed data in systolic manner
         feed_systolic_data();
