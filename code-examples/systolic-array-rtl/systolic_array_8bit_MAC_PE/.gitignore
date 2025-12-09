@@ -1,0 +1,19 @@
+# Simulation build artifacts
+*.vcd
+*_sim
+*.vvp
+
+# VCS specific files
+simv
+simv.daidir/
+csrc/
+*.vpd
+*.vdb
+*.log
+ucli.key
+vc_hdrs.h
+DVEfiles/
+inter.vpd
+*.fsdb
+novas*
+verdiLog/
