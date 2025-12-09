@@ -129,32 +129,33 @@ module traditional_systolic_tb;
     task feed_systolic_data;
         integer cycle;
         integer row, col;
-        integer a_time, b_time;
         begin
             // Total cycles needed = ROWS + COLS + processing time
             // For systolic array: each element enters at different times
+            // In proper systolic flow, element A[i][j] enters at row i at time j
+            // and element B[i][j] enters at column j at time i
             for (cycle = 0; cycle < ROWS + COLS + ROWS + 5; cycle = cycle + 1) begin
-                // Initialize buses to zero
+                // Initialize buses to zero each cycle
                 left_in_bus = {(ROWS * WORD_SIZE){1'b0}};
                 top_in_bus = {(COLS * WORD_SIZE){1'b0}};
                 
-                // Feed Matrix A from left (row-wise, staggered)
+                // Feed Matrix A from left
+                // For each row, feed elements sequentially with proper timing
+                // A[row][col] is fed to row 'row' at cycle 'col'
                 for (row = 0; row < ROWS; row = row + 1) begin
-                    for (col = 0; col < COLS; col = col + 1) begin
-                        a_time = row + col; // Stagger timing for systolic flow
-                        if (cycle == a_time) begin
-                            left_in_bus[(row+1)*WORD_SIZE-1 -: WORD_SIZE] = matrix_a[row][col];
-                        end
+                    if (cycle < COLS) begin
+                        // Feed element A[row][cycle] to row 'row'
+                        left_in_bus[(row+1)*WORD_SIZE-1 -: WORD_SIZE] = matrix_a[row][cycle];
                     end
                 end
                 
-                // Feed Matrix B from top (column-wise, staggered)
+                // Feed Matrix B from top
+                // For each column, feed elements sequentially with proper timing
+                // B[row][col] is fed to column 'col' at cycle 'row'
                 for (col = 0; col < COLS; col = col + 1) begin
-                    for (row = 0; row < ROWS; row = row + 1) begin
-                        b_time = col + row; // Stagger timing for systolic flow
-                        if (cycle == b_time) begin
-                            top_in_bus[(col+1)*WORD_SIZE-1 -: WORD_SIZE] = matrix_b[row][col];
-                        end
+                    if (cycle < ROWS) begin
+                        // Feed element B[cycle][col] to column 'col'
+                        top_in_bus[(col+1)*WORD_SIZE-1 -: WORD_SIZE] = matrix_b[cycle][col];
                     end
                 end
                 
@@ -222,7 +223,7 @@ module traditional_systolic_tb;
         // stat_bit_in = 0 for OS mode
         ctl_stat_bit_in = 0;
         ctl_dummy_fsm_op2_select_in = 0;
-        ctl_dummy_fsm_out_select_in = 1; // Enable accumulator output
+        ctl_dummy_fsm_out_select_in = 1; // 1: output accumulator, 0: output top_in
         
         // Feed data in systolic manner
         feed_systolic_data();
